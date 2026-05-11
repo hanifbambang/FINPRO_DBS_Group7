@@ -1,0 +1,6 @@
+{
+  "name": "Remix: PokéDex Retro DB",
+  "description": "An 8-bit / pixel-art Pokémon Database and Battle Log with a Redis-powered backend.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
