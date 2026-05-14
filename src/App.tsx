@@ -4,17 +4,20 @@ import { Pokedex } from "./pages/Pokedex";
 import { PokemonDetail } from "./pages/PokemonDetail";
 import { BattleArena } from "./pages/BattleArena";
 import { Safari } from "./pages/Safari";
+import { Store } from "./pages/Store";
 import { TypeChart } from "./pages/TypeChart";
 import { Leaderboard } from "./pages/Leaderboard";
 import { TrainerProfile } from "./pages/TrainerProfile";
 import AuthPage from "./pages/AuthPage";
 import { BattleProvider } from "./context/BattleContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { Home, Swords, Trophy, User, Zap, LogOut, Volume2, VolumeX } from "lucide-react";
+import { TrainerProvider, useTrainer } from "./context/TrainerContext";
+import { Home, Swords, Trophy, User, Zap, LogOut, Volume2, VolumeX, ShoppingCart } from "lucide-react";
 import { soundManager } from "./lib/sounds";
 
 function AppContent() {
   const { user, logout, isLoading } = useAuth();
+  const { coins } = useTrainer();
   const [isAudioEnabled, setIsAudioEnabled] = useState(soundManager.isEnabled());
 
   const toggleAudio = () => {
@@ -37,13 +40,13 @@ function AppContent() {
   return (
     <div className="min-h-screen relative flex flex-col bg-brutalist-red p-2 sm:p-4">
       <div className="crt-overlay" />
-      
+
       {/* Brutalist Header */}
       <header className="bg-retro-med p-4 flex flex-col sm:flex-row justify-between items-center border-b-8 border-black mb-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]">
         <Link to="/" onClick={() => soundManager.play("click")} className="flex items-center gap-4 mb-4 sm:mb-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-400 rounded-full border-4 border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center">
-               <div className="w-4 h-4 bg-white/30 rounded-full" />
+              <div className="w-4 h-4 bg-white/30 rounded-full" />
             </div>
             <div className="flex gap-2">
               <div className="w-3 h-3 bg-red-600 rounded-full border-2 border-black"></div>
@@ -60,13 +63,16 @@ function AppContent() {
             </div>
           </div>
         </Link>
-        
-        <nav className="flex gap-4 sm:gap-6 items-center">
+
+        <nav className="flex gap-4 sm:gap-6 items-center flex-wrap justify-center">
           <Link to="/" onClick={() => soundManager.play("click")} className="text-white hover:text-yellow-400 flex flex-col items-center gap-1">
             <span className="font-mono text-[10px] font-bold uppercase">Index</span>
           </Link>
           <Link to="/safari" onClick={() => soundManager.play("click")} className="text-white hover:text-emerald-400 flex flex-col items-center gap-1">
             <span className="font-mono text-[10px] font-bold uppercase">Safari</span>
+          </Link>
+          <Link to="/store" onClick={() => soundManager.play("click")} className="text-white hover:text-yellow-400 flex flex-col items-center gap-1">
+            <span className="font-mono text-[10px] font-bold uppercase">Store</span>
           </Link>
           <Link to="/battle" onClick={() => soundManager.play("click")} className="text-white hover:text-red-400 flex flex-col items-center gap-1">
             <span className="font-mono text-[10px] font-bold uppercase">Battle</span>
@@ -80,7 +86,14 @@ function AppContent() {
           <Link to={`/trainer/${user.id}`} onClick={() => soundManager.play("click")} className="text-white hover:text-blue-400 flex flex-col items-center gap-1">
             <span className="font-mono text-[10px] font-bold uppercase">User</span>
           </Link>
-          <button 
+
+          {/* Coin wallet in nav */}
+          <div className="flex items-center gap-1 bg-yellow-400 text-black border-2 border-black px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <span className="text-sm">🪙</span>
+            <span className="font-pixel text-[10px]">{coins.toLocaleString()}</span>
+          </div>
+
+          <button
             onClick={toggleAudio}
             className="text-white hover:text-yellow-400 flex flex-col items-center gap-1 transition-colors relative group"
             title={isAudioEnabled ? "Mute" : "Unmute"}
@@ -88,7 +101,7 @@ function AppContent() {
             {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
             <span className="font-mono text-[8px] font-bold uppercase">{isAudioEnabled ? "Audio On" : "Audio Off"}</span>
           </button>
-          <button 
+          <button
             onClick={logout}
             className="text-red-400 hover:text-red-300 flex flex-col items-center gap-1 transition-colors"
           >
@@ -104,6 +117,7 @@ function AppContent() {
           <Route path="/" element={<Pokedex />} />
           <Route path="/pokemon/:id" element={<PokemonDetail />} />
           <Route path="/safari" element={<Safari />} />
+          <Route path="/store" element={<Store />} />
           <Route path="/battle" element={<BattleArena />} />
           <Route path="/types" element={<TypeChart />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
@@ -127,11 +141,12 @@ export default function App() {
   return (
     <Router>
       <AuthProvider>
-        <BattleProvider>
-          <AppContent />
-        </BattleProvider>
+        <TrainerProvider>
+          <BattleProvider>
+            <AppContent />
+          </BattleProvider>
+        </TrainerProvider>
       </AuthProvider>
     </Router>
   );
 }
-
