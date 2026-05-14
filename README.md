@@ -414,12 +414,8 @@ Results are output to `/benchmarks/results.json`, illustrating the performance d
 
 ## 6. Team Members
 
-- [Member 1 Name] (Student ID) - Role
-- [Member 2 Name] (Student ID) - Role
-- [Member 3 Name] (Student ID) - Role
-
+- Hanif Mulia Nugroho 2406369066 - Team Leader/Database
+- Muhammad Arfassya Setyadi - 2406368914 - Frontend
+- Derryl Liandryo Putra - 2406368920 - Backend
+- Benintya Farrel Armaya - 2406450346 - FE/BE Integration
 ---
-
-## 7. Academic Integrity
-
-We utilized AI assistance (Gemini/ChatGPT) transparently to guide frontend styling and boilerplate structure. The database design, integration, and core application logic were verified, integrated, and presented by our team manually.
