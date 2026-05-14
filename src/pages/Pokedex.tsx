@@ -14,12 +14,13 @@ export const Pokedex: React.FC = () => {
     fetch("/api/pokemon")
       .then(res => res.json())
       .then(data => {
-        setPokemon(data);
+        const sorted = [...data].sort((a, b) => parseInt(a.id) - parseInt(b.id));
+        setPokemon(sorted);
         setLoading(false);
       });
   }, []);
 
-  const filtered = pokemon.filter(p => 
+  const filtered = pokemon.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -41,15 +42,14 @@ export const Pokedex: React.FC = () => {
               <span>Database Index</span>
               <span className="animate-pulse">ONLINE</span>
             </div>
-            
+
             <div className="space-y-1 overflow-y-auto h-[400px] pr-2">
               {pokemon.map(p => (
                 <button
                   key={p.id}
                   onClick={() => setSelectedId(p.id)}
-                  className={`w-full p-2 flex justify-between items-center text-xs font-bold uppercase transition-colors border-b border-black/10 ${
-                    selectedId === p.id ? 'bg-black text-white' : 'hover:bg-black/5'
-                  }`}
+                  className={`w-full p-2 flex justify-between items-center text-xs font-bold uppercase transition-colors border-b border-black/10 ${selectedId === p.id ? 'bg-black text-white' : 'hover:bg-black/5'
+                    }`}
                 >
                   <span className="flex items-center gap-2">
                     {selectedId === p.id && "▶"} {p.id.padStart(3, '0')} {p.name}
@@ -67,8 +67,8 @@ export const Pokedex: React.FC = () => {
             <div className="w-2 h-2 bg-green-500 animate-pulse"></div>
             <div className="text-[10px] uppercase font-mono">Master Node: Active</div>
           </div>
-          <Link 
-            to="/types" 
+          <Link
+            to="/types"
             className="w-full pixel-border-light bg-black/30 hover:bg-black/50 p-2 text-[8px] uppercase font-bold tracking-widest text-center flex items-center justify-center gap-2"
           >
             <span>Type Index Reference</span>
@@ -94,8 +94,8 @@ export const Pokedex: React.FC = () => {
                     <h2 className="text-4xl font-black uppercase tracking-tighter">{pokemon.find(p => p.id === selectedId).name}</h2>
                     <div className="flex gap-2 mt-2">
                       {pokemon.find(p => p.id === selectedId).types.split(",").map((type: string) => (
-                        <span 
-                          key={type} 
+                        <span
+                          key={type}
                           style={{ backgroundColor: getTypeColor(type) }}
                           className="border-2 border-black px-2 py-0.5 text-[10px] font-bold uppercase text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                         >
@@ -105,7 +105,7 @@ export const Pokedex: React.FC = () => {
                     </div>
                   </div>
 
-                  <Link 
+                  <Link
                     to={`/pokemon/${selectedId}`}
                     className="pixel-button w-fit uppercase"
                   >
@@ -133,7 +133,7 @@ export const Pokedex: React.FC = () => {
         <div className="dialogue-box">
           <div className="dialogue-label">Archive System</div>
           <div className="text-[14px] uppercase font-mono leading-tight">
-            Querying Redis cluster for entity #{selectedId?.padStart(3, '0')}... 
+            Querying Redis cluster for entity #{selectedId?.padStart(3, '0')}...
             Data retrieved successfully. Ready for evaluation.
           </div>
         </div>
