@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Swords, RotateCcw, Shield, Zap, Sparkles } from "lucide-react";
 import { useBattle } from "../context/BattleContext";
 import { MOVES, getTypeColor } from "../constants";
+import { soundManager } from "../lib/sounds";
 
 export const BattleArena: React.FC = () => {
   const {
@@ -29,6 +30,27 @@ export const BattleArena: React.FC = () => {
   } = useBattle();
 
   const [showSwitchMenu, setShowSwitchMenu] = React.useState(false);
+
+  // Resume battle BGM when entering, pause when leaving
+  useEffect(() => {
+    // If a battle is active, resume or start the BGM
+    if (isBattleActive) {
+      if (soundManager.hasBGM()) {
+        soundManager.resumeBGM();
+      } else {
+        soundManager.playBGM("battle_bgm");
+      }
+    }
+    // Note: we intentionally do NOT pause BGM here on isBattleActive change,
+    // because the victory/loss BGM should keep playing after battle ends.
+  }, [isBattleActive]);
+
+  // Pause BGM only when navigating away from the Battle page (unmount)
+  useEffect(() => {
+    return () => {
+      soundManager.pauseBGM();
+    };
+  }, []);
 
   useEffect(() => {
     // Auto-open switch menu if active Pokemon fainted and battle is still active

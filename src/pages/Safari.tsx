@@ -19,6 +19,9 @@ export const Safari: React.FC = () => {
   const [selectedBall, setSelectedBall] = useState<"pokeball" | "greatball" | "ultraball" | "masterball">("pokeball");
   const [activeBerry, setActiveBerry] = useState<number>(1);
   const [showItemMenu, setShowItemMenu] = useState<"none" | "balls" | "berries">("none");
+  const [showPartyFullConfirm, setShowPartyFullConfirm] = useState(false);
+  const [showSwapPicker, setShowSwapPicker] = useState(false);
+  const [partyTeam, setPartyTeam] = useState<any[]>([]);
 
   const findWildPokemon = async () => {
     setCatchStatus("idle");
@@ -123,8 +126,9 @@ export const Safari: React.FC = () => {
         setIsShaking(0);
 
         if (data.code === "PARTY_FULL") {
-          setCatchStatus("fail");
-          setMessages(["SYSTEM ALERT: Active party is full!", data.error]);
+          setPartyTeam(data.team || []);
+          setShowPartyFullConfirm(true);
+          setMessages(["SYSTEM ALERT: Active party is full!", "Do you want to replace a current party member?"]);
           return;
         }
 
@@ -387,6 +391,110 @@ export const Safari: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Party Full Confirmation Overlay */}
+      <AnimatePresence>
+        {showPartyFullConfirm && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+          >
+            <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full">
+              <h3 className="font-pixel text-[12px] uppercase mb-4 border-b-2 border-black pb-2">Party Full (6/6)</h3>
+              <p className="font-mono text-[10px] mb-6">Do you want to replace a current party member with {wildPokemon?.name}?</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => {
+                    soundManager.play("click");
+                    setShowPartyFullConfirm(false);
+                    setShowSwapPicker(true);
+                    setMessages([`Choose which Pokémon to replace with ${wildPokemon?.name}.`]);
+                  }}
+                  className="p-3 border-4 border-black bg-emerald-100 hover:bg-emerald-200 font-pixel text-[10px] uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+                >Yes, Replace</button>
+                <button
+                  onClick={() => {
+                    soundManager.play("click");
+                    setShowPartyFullConfirm(false);
+                    setCatchStatus("fail");
+                    setMessages([`${wildPokemon?.name} was released back into the wild.`]);
+                    setTimeout(() => findWildPokemon(), 2000);
+                  }}
+                  className="p-3 border-4 border-black bg-red-100 hover:bg-red-200 font-pixel text-[10px] uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+                >No, Release</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Swap Picker Overlay */}
+      <AnimatePresence>
+        {showSwapPicker && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+          >
+            <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-md w-full">
+              <div className="flex justify-between items-center mb-4 border-b-2 border-black pb-2">
+                <h3 className="font-pixel text-[10px] uppercase">Choose Pokémon to Replace</h3>
+                <button
+                  onClick={() => {
+                    setShowSwapPicker(false);
+                    setCatchStatus("fail");
+                    setMessages([`${wildPokemon?.name} was released back into the wild.`]);
+                    setTimeout(() => findWildPokemon(), 2000);
+                  }}
+                  className="text-[10px] border-2 border-black px-1 font-bold"
+                >X</button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {partyTeam.map((p: any, i: number) => (
+                  <button
+                    key={p.id}
+                    onClick={async () => {
+                      soundManager.play("click");
+                      try {
+                        const res = await fetch("/api/catch/replace", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            trainerId: user?.id || "1",
+                            pokemonId: wildPokemon.id,
+                            replaceIndex: i
+                          })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          soundManager.play("catch");
+                          setCatchStatus("success");
+                          setMessages([`${p.name} was released.`, `${wildPokemon.name} joined your party!`]);
+                        } else {
+                          setMessages(["Error replacing party member."]);
+                        }
+                      } catch {
+                        setMessages(["CRITICAL ERROR: Connection lost."]);
+                      }
+                      setShowSwapPicker(false);
+                    }}
+                    className="flex items-center gap-2 border-2 border-black p-2 text-left hover:bg-red-50 transition-all"
+                  >
+                    <img src={p.sprite} className="w-10 h-10 pixelated" alt={p.name} />
+                    <div className="overflow-hidden flex-1">
+                      <p className="font-pixel text-[8px] uppercase truncate">{p.name}</p>
+                      <p className="font-mono text-[6px] opacity-50">{p.types}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <DialogueBox messages={messages} />
     </div>

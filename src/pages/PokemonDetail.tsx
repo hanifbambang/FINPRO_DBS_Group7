@@ -63,7 +63,7 @@ export const PokemonDetail: React.FC = () => {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      <Link to="/" className="inline-flex items-center gap-2 font-mono text-[12px] uppercase font-bold hover:text-white transition-colors">
+      <Link to="/home" className="inline-flex items-center gap-2 font-mono text-[12px] uppercase font-bold hover:text-white transition-colors">
         <ChevronLeft size={16} /> Back to Archive Index
       </Link>
 
