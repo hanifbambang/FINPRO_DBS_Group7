@@ -140,6 +140,7 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setMessages([`Rival Trainer ${data.name} wants to battle!`, `They sent out ${data.team[0].name}!`]);
       setIsBattleActive(true);
+      soundManager.playBGM("battle_bgm");
     } catch (e) {
       console.error("Battle initialization error:", e);
       setMessages(["Error: Communication with Matchmaking server failed. Check your network or try again."]);
@@ -150,7 +151,7 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!rival || isAnimating || index === playerActiveIndex || playerTeamHps[index] <= 0) return;
 
     setIsAnimating(true);
-    soundManager.play("hit");
+    soundManager.play("click");
     const oldP = playerTeam[playerActiveIndex];
     const newP = playerTeam[index];
     const newMaxHp = calculateMaxHp(parseInt(newP.hp), playerLevel);
@@ -201,12 +202,20 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     const rBaseDamage = Math.floor(((2 * rLevel / 5 + 2) * rMoveData.power * (rAtk / pDef)) / 50) + 2;
     const rd = Math.floor(rBaseDamage * rm * rStab * (Math.random() * 0.15 + 0.85));
-    
-    if (rm > 1) setMessages(prev => [...prev, "It's super effective!"]);
-    if (rm < 1 && rm > 0) setMessages(prev => [...prev, "It's not very effective..."]);
-    if (rm === 0) setMessages(prev => [...prev, `It doesn't affect ${currentP.name}...`]);
-
     const newPlayerHp = Math.max(0, currentHp - rd);
+    
+    if (rm > 1) {
+      soundManager.play("hit_super");
+      setMessages(prev => [...prev, "It's super effective!"]);
+    } else if (rm < 1 && rm > 0) {
+      soundManager.play("hit_weak");
+      setMessages(prev => [...prev, "It's not very effective..."]);
+    } else if (rm === 0) {
+      setMessages(prev => [...prev, `It doesn't affect ${currentP.name}...`]);
+    } else {
+      soundManager.play("hit_normal");
+    }
+
     setPlayerHp(newPlayerHp);
     
     const nextHps = [...teamHps];
@@ -220,6 +229,7 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!hasUsable) {
         setMessages(prev => [...prev, "You have no more usable Pokémon!"]);
         setIsBattleActive(false);
+        soundManager.stopBGM();
         if (user && user.id) {
           fetch(`/api/trainer/${user.id}/loss`, { method: 'POST' }).catch(console.error);
         }
@@ -245,7 +255,6 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!playerPokemon || !rival || isAnimating || playerHp <= 0 || rivalHp <= 0) return;
 
     setIsAnimating(true);
-    soundManager.play("hit");
     const rivalPokemon = rival.team[rivalActiveIndex];
     const moveData = MOVES[moveName] || { name: moveName, type: "Normal", power: 40 };
     
@@ -261,12 +270,20 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     const baseDamage = Math.floor(((2 * level / 5 + 2) * moveData.power * (atk / def)) / 50) + 2;
     const damageToRival = Math.floor(baseDamage * multiplier * stab * (Math.random() * 0.15 + 0.85));
-    
-    if (multiplier > 1) setMessages(prev => [...prev, "It's super effective!"]);
-    if (multiplier < 1 && multiplier > 0) setMessages(prev => [...prev, "It's not very effective..."]);
-    if (multiplier === 0) setMessages(prev => [...prev, `It doesn't affect ${rivalPokemon.name}...`]);
-
     const newRivalHp = Math.max(0, rivalHp - damageToRival);
+    
+    if (multiplier > 1) {
+      soundManager.play("hit_super");
+      setMessages(prev => [...prev, "It's super effective!"]);
+    } else if (multiplier < 1 && multiplier > 0) {
+      soundManager.play("hit_weak");
+      setMessages(prev => [...prev, "It's not very effective..."]);
+    } else if (multiplier === 0) {
+      setMessages(prev => [...prev, `It doesn't affect ${rivalPokemon.name}...`]);
+    } else {
+      soundManager.play("hit_normal");
+    }
+
     setRivalHp(newRivalHp);
     
     if (newRivalHp <= 0) {
@@ -285,7 +302,7 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setMessages([`${rival.name} sent out ${nextPokemon.name}!`]);
         setIsAnimating(false);
       } else {
-        soundManager.play("victory");
+        soundManager.playBGM("victory_bgm");
         setMessages([`You defeated Rival ${rival.name}!`, "Victory achieved. RANK +25"]);
         setIsBattleActive(false);
         setIsAnimating(false);

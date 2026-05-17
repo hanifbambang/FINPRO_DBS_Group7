@@ -22,7 +22,8 @@ router.get("/random", async (req, res) => {
         try { caughtIds = JSON.parse(caughtIds); } catch (e) { caughtIds = []; }
       }
       if (caughtIds.length > 0) {
-        const filtered = all.filter((p: any) => !caughtIds.includes(p.id) && !caughtIds.includes(String(p.id)));
+        const caughtIdStrings = caughtIds.map(String);
+        const filtered = all.filter((p: any) => !caughtIdStrings.includes(String(p.id)));
         if (filtered.length > 0) all = filtered;
       }
     }

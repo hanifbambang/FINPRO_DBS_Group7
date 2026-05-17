@@ -59,9 +59,17 @@ router.post("/catch", async (req, res) => {
   }
 
   if (teamIds.length >= 6) {
+    // Fetch full team details so frontend can show the swap picker
+    const teamDetails = [];
+    for (const tid of teamIds) {
+      const p = await dbQueryOne("pokemon", { id: String(tid) });
+      if (p) teamDetails.push({ id: p.id, name: p.name, sprite: p.sprite, types: p.types });
+    }
+
     return res.status(400).json({
       code: "PARTY_FULL",
-      error: "COMMUNICATION ERROR: Trainer party at max capacity (6/6)."
+      error: "COMMUNICATION ERROR: Trainer party at max capacity (6/6).",
+      team: teamDetails
     });
   }
 
@@ -81,20 +89,20 @@ router.post("/catch", async (req, res) => {
     return res.json({ success: true, message: `POKEMON_ID ${pokemonId} successfully serialized to active team.` });
   }
 
-  // Base catch rate: 85% at level 10, scales down to 45% at level 100
-  const baseRate = Math.max(0.45, 0.90 - level / 200);
+  // Base catch rate: scales from 95% at level 10 down to 55% at level 100
+  const baseRate = Math.max(0.55, 0.95 - level / 250);
   let successRate = baseRate * multiplier;
 
-  if (mood === "angry") successRate *= 0.6;
-  if (mood === "eating") successRate *= 1.15;
+  if (mood === "angry") successRate *= 0.7;
+  if (mood === "eating") successRate *= 1.25;
 
-  // Cap at 95% — always a small chance to fail (Master Ball bypasses this above)
-  successRate = Math.min(0.95, successRate);
+  // Cap at 99% with high multipliers, 95% with base pokeball
+  successRate = Math.min(0.99, successRate);
 
-  console.log(`[CATCH] baseRate=${baseRate.toFixed(2)} successRate=${successRate.toFixed(2)}`);
+  console.log(`[CATCH] baseRate=${baseRate.toFixed(2)} successRate=${successRate.toFixed(2)} multiplier=${multiplier}`);
 
   if (Math.random() > successRate) {
-    const fleeRate = 0.05;
+    const fleeRate = 0.03;
     const fled = Math.random() < fleeRate;
 
     return res.status(400).json({
@@ -113,4 +121,27 @@ router.post("/catch", async (req, res) => {
   res.json({ success: true, message: `POKEMON_ID ${pokemonId} successfully serialized to active team.` });
 });
 
+// Replace a party member when the party is full after a successful catch
+router.post("/catch/replace", async (req, res) => {
+  const { trainerId, pokemonId, replaceIndex } = req.body;
+
+  const trainer = await dbQueryOne("trainers", { userId: trainerId });
+  if (!trainer) return res.status(404).json({ error: "Trainer not found" });
+
+  let teamIds = trainer.team || [];
+  if (typeof teamIds === "string") {
+    try { teamIds = JSON.parse(teamIds); } catch (e) { teamIds = []; }
+  }
+
+  if (replaceIndex < 0 || replaceIndex >= teamIds.length) {
+    return res.status(400).json({ error: "Invalid replace index" });
+  }
+
+  teamIds[replaceIndex] = pokemonId;
+  await dbUpdate("trainers", { userId: trainerId }, { team: teamIds });
+
+  res.json({ success: true, message: `Slot ${replaceIndex} replaced with POKEMON_ID ${pokemonId}.` });
+});
+
 export default router;
+
