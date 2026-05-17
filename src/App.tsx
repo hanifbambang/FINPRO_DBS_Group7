@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate } from "react-router-dom";
 import React, { useState } from "react";
 import { Pokedex } from "./pages/Pokedex";
 import { PokemonDetail } from "./pages/PokemonDetail";
@@ -9,21 +9,21 @@ import { TypeChart } from "./pages/TypeChart";
 import { Leaderboard } from "./pages/Leaderboard";
 import { TrainerProfile } from "./pages/TrainerProfile";
 import AuthPage from "./pages/AuthPage";
+import OpeningScreen from "./pages/OpeningScreen";
 import { BattleProvider } from "./context/BattleContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { TrainerProvider, useTrainer } from "./context/TrainerContext";
 import { Home, Swords, Trophy, User, Zap, LogOut, Volume2, VolumeX, ShoppingCart } from "lucide-react";
 import { soundManager } from "./lib/sounds";
 
-function AppContent() {
-  const { user, logout, isLoading } = useAuth();
-  const { coins } = useTrainer();
-  const [isAudioEnabled, setIsAudioEnabled] = useState(soundManager.isEnabled());
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
 
-  const toggleAudio = () => {
-    const newState = soundManager.toggle();
-    setIsAudioEnabled(newState);
-  };
+function AppContent() {
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -33,9 +33,28 @@ function AppContent() {
     );
   }
 
-  if (!user) {
-    return <AuthPage />;
-  }
+  return (
+    <Routes>
+      <Route path="/" element={<OpeningScreen />} />
+      <Route path="/login" element={user ? <Navigate to="/home" replace /> : <AuthPage />} />
+      <Route path="/*" element={
+        <ProtectedRoute>
+          <MainAppLayout />
+        </ProtectedRoute>
+      } />
+    </Routes>
+  );
+}
+
+function MainAppLayout() {
+  const { user, logout } = useAuth();
+  const { coins } = useTrainer();
+  const [isAudioEnabled, setIsAudioEnabled] = useState(soundManager.isEnabled());
+
+  const toggleAudio = () => {
+    const newState = soundManager.toggle();
+    setIsAudioEnabled(newState);
+  };
 
   return (
     <div className="min-h-screen relative flex flex-col bg-brutalist-red p-2 sm:p-4">
@@ -65,7 +84,7 @@ function AppContent() {
         </Link>
 
         <nav className="flex gap-4 sm:gap-6 items-center flex-wrap justify-center">
-          <Link to="/" onClick={() => soundManager.play("click")} className="text-white hover:text-yellow-400 flex flex-col items-center gap-1">
+          <Link to="/home" onClick={() => soundManager.play("click")} className="text-white hover:text-yellow-400 flex flex-col items-center gap-1">
             <span className="font-mono text-[10px] font-bold uppercase">Index</span>
           </Link>
           <Link to="/safari" onClick={() => soundManager.play("click")} className="text-white hover:text-emerald-400 flex flex-col items-center gap-1">
@@ -114,7 +133,7 @@ function AppContent() {
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-[1200px] mx-auto pb-12">
         <Routes>
-          <Route path="/" element={<Pokedex />} />
+          <Route path="/home" element={<Pokedex />} />
           <Route path="/pokemon/:id" element={<PokemonDetail />} />
           <Route path="/safari" element={<Safari />} />
           <Route path="/store" element={<Store />} />
@@ -122,6 +141,7 @@ function AppContent() {
           <Route path="/types" element={<TypeChart />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/trainer/:id" element={<TrainerProfile />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </main>
 
